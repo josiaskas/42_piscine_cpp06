@@ -27,18 +27,44 @@ class Converter
 		virtual ~Converter();
 		Converter &operator=(Converter const &src);
 
-		std::string convertToChar() const;
-		std::string convertToInt() const;
-		std::string convertToFloat() const;
-		std::string convertToDouble() const;
-
+		char	getChar() const;
+		int		getInt() const;
+		float	getFloat() const;
+		double	getDouble() const;
+		class ImpossibleException : public std::exception{
+			public:
+				virtual const char* what() const throw();
+		};
+		class NonDisplayableException : public std::exception{
+			public:
+				virtual const char* what() const throw();
+		};
+		class EmptyException : public std::exception{
+			public:
+				virtual const char* what() const throw();
+		};
+		class InvalidInputException : public std::exception{
+			public:
+				virtual const char* what() const throw();
+		};
 	private:
 		std::string _userInput;
 		int			_int;
 		char		_char;
 		float		_float;
 		double		_double;
+		enum eType
+		{
+			CHAR,
+			INT,
+			FLOAT,
+			DOUBLE,
+			PSEUDO_LITERAL,
+		};
+		eType		_type;
 		bool internalParser();
+		bool isPseudoLiteral() const;
 };
 
+std::ostream &operator<<(std::ostream &o, Converter const &src);
 #endif

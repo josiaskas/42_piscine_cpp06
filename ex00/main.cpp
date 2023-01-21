@@ -10,21 +10,23 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <iostream>
+#include "Converter.hpp"
 
-int main(int argc, char **argv)
+int main(int argc, char const *argv[])
 {
-	std::string userInput;
-
-	if (argc != 2){
-		std::cout << "usage: ./convert [number]" << std::endl;
+	if (argc != 2)
+	{
+		std::cout << "Usage: ./convert [value]" << std::endl;
 		return 1;
 	}
-	userInput = argv[1];
-	if (userInput.empty()){
-		std::cout << "Error: empty string" << std::endl;
-		return 1;
+	try
+	{
+		Converter converter(argv[1]);
+		converter.print();
 	}
-
+	catch (std::exception &e)
+	{
+		std::cout << e.what() << std::endl;
+	}
 	return 0;
 }
