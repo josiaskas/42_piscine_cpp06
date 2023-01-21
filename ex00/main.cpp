@@ -22,11 +22,11 @@ int main(int argc, char const *argv[])
 	try
 	{
 		Converter converter(argv[1]);
-		converter.print();
+		std::cout << converter << std::endl;
 	}
 	catch (std::exception &e)
 	{
-		std::cout << e.what() << std::endl;
+		std::cerr << e.what() << std::endl;
 	}
 	return 0;
 }
