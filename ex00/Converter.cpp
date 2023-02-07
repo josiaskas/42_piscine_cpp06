@@ -95,15 +95,12 @@ void Converter::internalParser()
 			_char = static_cast<char>(parsedLong);
 			_float = static_cast<float>(parsedDouble);
 			_double = static_cast<double>(parsedDouble);
-			_type = INT;
-		}
-		else if (leftCharOnDouble[0] == '\0')
-		{
-			_int = static_cast<int>(parsedDouble);
-			_char = static_cast<char>(parsedDouble);
-			_float = static_cast<float>(parsedDouble);
-			_double = static_cast<double>(parsedDouble);
-			_type = DOUBLE;
+			if (parsedLong >= CHAR_MIN && parsedLong <= CHAR_MAX)
+				_type = CHAR;
+			else if (parsedLong >= INT_MIN && parsedLong <= INT_MAX)
+				_type = INT;
+			else
+				_type = DOUBLE; // overflow
 		}
 		else if (leftCharOnDouble[0] == 'f' && leftCharOnDouble[1] == '\0')
 		{
@@ -115,6 +112,14 @@ void Converter::internalParser()
 			_char = static_cast<char>(parsedDouble);
 			_float = static_cast<float>(parsedDouble);
 			_double = static_cast<double>(parsedDouble);
+		}
+		else if (leftCharOnDouble[0] == '\0')
+		{
+			_int = static_cast<int>(parsedDouble);
+			_char = static_cast<char>(parsedDouble);
+			_float = static_cast<float>(parsedDouble);
+			_double = static_cast<double>(parsedDouble);
+			_type = DOUBLE;
 		}
 		else
 			throw Converter::InvalidInputException();
@@ -207,7 +212,7 @@ float Converter::getFloat() const
 			throw Converter::ImpossibleException();
 	}
 	else if (_type == PSEUDO_LITERAL)
-		throw return static_cast<float>(_double);
+		return static_cast<float>(_double);
 	else
 		throw Converter::InvalidInputException();
 }
