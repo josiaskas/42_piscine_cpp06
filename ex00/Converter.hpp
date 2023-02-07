@@ -31,6 +31,7 @@ class Converter
 		int		getInt() const;
 		float	getFloat() const;
 		double	getDouble() const;
+
 		class ImpossibleException : public std::exception{
 			public:
 				virtual const char* what() const throw();

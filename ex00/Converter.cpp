@@ -80,7 +80,10 @@ void Converter::internalParser()
 			_char = static_cast<char>(parsedLong);
 			_float = static_cast<float>(parsedDouble);
 			_double = static_cast<double>(parsedDouble);
-			_type = INT;
+			if (_int >= -128 && _int <= 126)
+				_type = CHAR;
+			else
+				_type = INT;
 		}
 		else if (leftCharOnDouble[0] == '\0')
 		{
@@ -122,31 +125,39 @@ char Converter::getChar() const
 	}
 	else if (_type == INT)
 	{
-		if (_int >= 0 && _int <= 127)
-			return static_cast<char>(_int);
+		if (_int >= -128 && _int <= 126){
+			if (isprint(_int))
+				return static_cast<char>(_int);
+			else
+				throw Converter::NonDisplayableException();
+		}
 		else
-			throw Converter::NonDisplayableException();
+			throw Converter::ImpossibleException();
 	}
 	else if (_type == FLOAT)
 	{
-		if (_float >= 0 && _float <= 127)
-			return static_cast<char>(_float);
-		else if (_float > 127)
-			throw Converter::ImpossibleException();
+		if (_float >= -128 && _float <= 126){
+			if (isprint(static_cast<int>(_float)))
+				return static_cast<char>(_float);
+			else
+				throw Converter::NonDisplayableException();
+		}
 		else
-			throw Converter::NonDisplayableException();
+			throw Converter::ImpossibleException();
 	}
 	else if (_type == DOUBLE)
 	{
-		if (_double >= 0 && _double <= 127)
-			return static_cast<char>(_double);
-		else if (_double > 127)
-			throw Converter::ImpossibleException();
+		if (_double >= -128 && _double <= 126){
+			if (isprint(static_cast<int>(_double)))
+				return static_cast<char>(_double);
+			else
+				throw Converter::NonDisplayableException();
+		}
 		else
-			throw Converter::NonDisplayableException();
+			throw Converter::ImpossibleException();
 	}
 	else if (_type == PSEUDO_LITERAL)
-		throw Converter::NonDisplayableException();
+		throw Converter::ImpossibleException();
 	else
 		throw Converter::InvalidInputException();
 }
@@ -159,17 +170,17 @@ int Converter::getInt() const
 		return _int;
 	else if (_type == FLOAT)
 	{
-		if (_float >= INT_MIN && _float <= INT_MAX)
-			return static_cast<int>(_float);
-		else
+		if (_float < INT_MIN || _float > INT_MAX)
 			throw Converter::ImpossibleException();
+		else
+			return static_cast<int>(_float);
 	}
 	else if (_type == DOUBLE)
 	{
-		if (_double >= INT_MIN && _double <= INT_MAX)
-			return static_cast<int>(_double);
-		else
+		if (_double < INT_MIN || _double > INT_MAX)
 			throw Converter::ImpossibleException();
+		else
+			return static_cast<int>(_double);
 	}
 	else if (_type == PSEUDO_LITERAL)
 		throw Converter::NonDisplayableException();
