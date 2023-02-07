@@ -41,9 +41,6 @@ int	main(void)
 	std::cout << "data2->n: " << data2->n << std::endl;
 	std::cout << "data2->s2: " << data2->s2 << std::endl;
 
-	std::cout << "pointer data: " << &data << std::endl;
-	std::cout << "pointer data2: " << &data2 << std::endl;
-
 	delete data;
 	return 0;
 }

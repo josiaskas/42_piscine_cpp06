@@ -23,7 +23,7 @@ Converter::Converter(std::string userInput): _userInput(userInput), _int(0), _ch
 		internalParser();
 	}catch (std::exception &e){
 		_error = true;
-		std::cerr << e.what() << std::endl;
+		std::cerr << "(init value error: " << e.what() <<")"<<std::endl;
 	}
 }
 
@@ -292,7 +292,10 @@ void Converter::printFloat(std::ostream &out) const{
 	try
 	{
 		float f = getFloat();
-		out << std::fixed << std::setprecision(1) << f << "f" << "\n";
+		if (_type == CHAR || _type == INT)
+			out << std::fixed << std::setprecision(1) << f << "f" << "\n";
+		else
+			out << f << "f" << "\n";
 	}
 	catch (const std::exception &e)
 	{
@@ -308,7 +311,10 @@ void Converter::printDouble(std::ostream &out) const{
 	try
 	{
 		double d = getDouble();
-		out << std::fixed << std::setprecision(1) << d << std::endl;
+		if (_type == CHAR || _type == INT)
+			out << std::fixed << std::setprecision(1) << d << "\n";
+		else
+			out << d << "\n";
 	}
 	catch (const std::exception &e)
 	{
