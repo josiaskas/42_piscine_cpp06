@@ -12,14 +12,19 @@
 
 #include "Converter.hpp"
 
-Converter::Converter(): _userInput("0"), _int(0), _char(0), _float(0), _double(0)
+Converter::Converter(): _userInput("0"), _int(0), _char(0), _float(0), _double(0),_error(false)
 {
 	internalParser();
 }
 
-Converter::Converter(std::string userInput): _userInput(userInput), _int(0), _char(0), _float(0), _double(0)
+Converter::Converter(std::string userInput): _userInput(userInput), _int(0), _char(0), _float(0), _double(0), _error(false)
 {
-	internalParser();
+	try {
+		internalParser();
+	}catch (std::exception &e){
+		_error = true;
+		std::cerr << e.what() << std::endl;
+	}
 }
 
 Converter::Converter(Converter const &src): _userInput(src._userInput), _int(src._int), _char(src._char), _float(src._float), _double(src._double)
@@ -40,6 +45,8 @@ Converter &Converter::operator=(Converter const &src)
 		this->_char = src._char;
 		this->_float = src._float;
 		this->_double = src._double;
+		this->_error = src._error;
+		this->_type = src._type;
 	}
 	return *this;
 }
@@ -74,16 +81,21 @@ void Converter::internalParser()
 		long	parsedLong = strtol(_userInput.c_str(), &leftCharOnLong, 10);
 		double	parsedDouble = strtod(_userInput.c_str(), &leftCharOnDouble);
 
-		if (leftCharOnLong[0] == '\0')
+		if (isPseudoLiteral())
+		{
+			_int = static_cast<int>(parsedDouble);
+			_char = static_cast<char>(parsedDouble);
+			_float = static_cast<float>(parsedDouble);
+			_double = static_cast<double>(parsedDouble);
+			_type = PSEUDO_LITERAL;
+		}
+		else if (leftCharOnLong[0] == '\0')
 		{
 			_int = static_cast<int>(parsedLong);
 			_char = static_cast<char>(parsedLong);
 			_float = static_cast<float>(parsedDouble);
 			_double = static_cast<double>(parsedDouble);
-			if (_int >= -128 && _int <= 126)
-				_type = CHAR;
-			else
-				_type = INT;
+			_type = INT;
 		}
 		else if (leftCharOnDouble[0] == '\0')
 		{
@@ -95,19 +107,14 @@ void Converter::internalParser()
 		}
 		else if (leftCharOnDouble[0] == 'f' && leftCharOnDouble[1] == '\0')
 		{
+			if (parsedDouble >= -FLT_MAX && parsedDouble <= FLT_MAX)
+				_type = DOUBLE; // overflow
+			else
+				_type = FLOAT;
 			_int = static_cast<int>(parsedDouble);
 			_char = static_cast<char>(parsedDouble);
 			_float = static_cast<float>(parsedDouble);
 			_double = static_cast<double>(parsedDouble);
-			_type = FLOAT;
-		}
-		else if (isPseudoLiteral())
-		{
-			_int = static_cast<int>(parsedDouble);
-			_char = static_cast<char>(parsedDouble);
-			_float = static_cast<float>(parsedDouble);
-			_double = static_cast<double>(parsedDouble);
-			_type = PSEUDO_LITERAL;
 		}
 		else
 			throw Converter::InvalidInputException();
@@ -116,7 +123,9 @@ void Converter::internalParser()
 
 char Converter::getChar() const
 {
-	if (_type == CHAR)
+	if (_error)
+		throw Converter::ImpossibleException();
+	else if (_type == CHAR)
 	{
 		if (isprint(_char))
 			return _char;
@@ -125,36 +134,28 @@ char Converter::getChar() const
 	}
 	else if (_type == INT)
 	{
-		if (_int >= -128 && _int <= 126){
-			if (isprint(_int))
-				return static_cast<char>(_int);
-			else
-				throw Converter::NonDisplayableException();
-		}
+		if (_int >= 0 && _int <= 127)
+			return static_cast<char>(_int);
 		else
-			throw Converter::ImpossibleException();
+			throw Converter::NonDisplayableException();
 	}
 	else if (_type == FLOAT)
 	{
-		if (_float >= -128 && _float <= 126){
-			if (isprint(static_cast<int>(_float)))
-				return static_cast<char>(_float);
-			else
-				throw Converter::NonDisplayableException();
-		}
-		else
+		if (_float >= 0 && _float <= 127)
+			return static_cast<char>(_float);
+		else if (_float > 127)
 			throw Converter::ImpossibleException();
+		else
+			throw Converter::NonDisplayableException();
 	}
 	else if (_type == DOUBLE)
 	{
-		if (_double >= -128 && _double <= 126){
-			if (isprint(static_cast<int>(_double)))
-				return static_cast<char>(_double);
-			else
-				throw Converter::NonDisplayableException();
-		}
-		else
+		if (_double >= 0 && _double <= 127)
+			return static_cast<char>(_double);
+		else if (_double > 127)
 			throw Converter::ImpossibleException();
+		else
+			throw Converter::NonDisplayableException();
 	}
 	else if (_type == PSEUDO_LITERAL)
 		throw Converter::ImpossibleException();
@@ -164,26 +165,28 @@ char Converter::getChar() const
 
 int Converter::getInt() const
 {
-	if (_type == CHAR)
+	if (_error)
+		throw Converter::ImpossibleException();
+	else if (_type == CHAR)
 		return static_cast<int>(_char);
 	else if (_type == INT)
 		return _int;
 	else if (_type == FLOAT)
 	{
-		if (_float < INT_MIN || _float > INT_MAX)
-			throw Converter::ImpossibleException();
-		else
+		if (_float >= INT_MIN && _float <= INT_MAX)
 			return static_cast<int>(_float);
+		else
+			throw Converter::ImpossibleException();
 	}
 	else if (_type == DOUBLE)
 	{
-		if (_double < INT_MIN || _double > INT_MAX)
-			throw Converter::ImpossibleException();
-		else
+		if (_double >= INT_MIN && _double <= INT_MAX)
 			return static_cast<int>(_double);
+		else
+			throw Converter::ImpossibleException();
 	}
 	else if (_type == PSEUDO_LITERAL)
-		throw Converter::NonDisplayableException();
+		throw Converter::ImpossibleException();
 	else
 		throw Converter::InvalidInputException();
 }
@@ -197,9 +200,14 @@ float Converter::getFloat() const
 	else if (_type == FLOAT)
 		return _float;
 	else if (_type == DOUBLE)
-		return static_cast<float>(_double);
+	{
+		if (_double >= -FLT_MAX && _double <= FLT_MAX)
+			return static_cast<float>(_double);
+		else
+			throw Converter::ImpossibleException();
+	}
 	else if (_type == PSEUDO_LITERAL)
-		throw Converter::NonDisplayableException();
+		throw return static_cast<float>(_double);
 	else
 		throw Converter::InvalidInputException();
 }
@@ -215,7 +223,7 @@ double Converter::getDouble() const
 	else if (_type == DOUBLE)
 		return _double;
 	else if (_type == PSEUDO_LITERAL)
-		throw Converter::NonDisplayableException();
+		return _double;
 	else
 		throw Converter::InvalidInputException();
 }
@@ -228,72 +236,91 @@ bool Converter::isPseudoLiteral() const
 		return false;
 }
 
-void Converter::printChar() const
+const char *Converter::InvalidInputException::what() const throw()
 {
+	return "Invalid input";
+}
+
+const char *Converter::NonDisplayableException::what() const throw()
+{
+	return "Non displayable";
+}
+
+const char *Converter::ImpossibleException::what() const throw()
+{
+	return "impossible";
+}
+
+const char *Converter::EmptyInputException::what() const throw()
+{
+	return "Empty input";
+}
+
+void Converter::printChar(std::ostream &out) const{
+	out << "char: ";
 	try
 	{
-		std::cout << "char: ";
-		std::cout << "'" << getChar() << "'" << std::endl;
+		char c = getChar();
+		out << "'" << c << "'" << "\n";
 	}
-	catch (Converter::NonDisplayableException &e)
+	catch (const std::exception &e)
 	{
-		std::cout << e.what() << std::endl;
-	}
-	catch (Converter::InvalidInputException &e)
-	{
-		std::cout << e.what() << std::endl;
+		out << e.what() << "\n";
 	}
 }
 
-void Converter::printInt() const
-{
+void Converter::printInt(std::ostream &out) const{
+	out << "int: ";
 	try
 	{
-		std::cout << "int: ";
-		std::cout << getInt() << std::endl;
+		int i = getInt();
+		out << i << "\n";
 	}
-	catch (Converter::ImpossibleException &e)
+	catch (const std::exception &e)
 	{
-		std::cout << e.what() << std::endl;
-	}
-	catch (Converter::InvalidInputException &e)
-	{
-		std::cout << e.what() << std::endl;
+		out << e.what() << "\n";
 	}
 }
 
-void Converter::printFloat() const
-{
+void Converter::printFloat(std::ostream &out) const{
+	out << "float: ";
 	try
 	{
-		std::cout << "float: ";
-		std::cout << std::fixed << std::setprecision(1) << getFloat() << "f" << std::endl;
+		float f = getFloat();
+		out << std::fixed << std::setprecision(1) << f << "f" << "\n";
 	}
-	catch (Converter::NonDisplayableException &e)
+	catch (const std::exception &e)
 	{
-		std::cout << e.what() << std::endl;
-	}
-	catch (Converter::InvalidInputException &e)
-	{
-		std::cout << e.what() << std::endl;
+		if (_type == PSEUDO_LITERAL)
+			out << _float << "f" << "\n";
+		else
+			out << e.what() << "\n";
 	}
 }
 
-void Converter::printDouble() const
-{
+void Converter::printDouble(std::ostream &out) const{
+	out << "double: ";
 	try
 	{
-		std::cout << "double: ";
-		std::cout << std::fixed << std::setprecision(1) << getDouble() << std::endl;
+		double d = getDouble();
+		out << std::fixed << std::setprecision(1) << d << std::endl;
 	}
-	catch (Converter::NonDisplayableException &e)
+	catch (const std::exception &e)
 	{
-		std::cout << e.what() << std::endl;
+		if (_type == PSEUDO_LITERAL)
+			out << _double << std::endl;
+		else
+			out << e.what() << std::endl;
 	}
-	catch (Converter::InvalidInputException &e)
-	{
-		std::cout << e.what() << std::endl;
-	}
+}
+
+std::ostream &operator<<(std::ostream &out, Converter const &converter)
+{
+	converter.printChar(out);
+	converter.printInt(out);
+	converter.printFloat(out);
+	converter.printDouble(out);
+	return out;
 }
 
 

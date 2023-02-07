@@ -17,6 +17,7 @@
 # include <sstream>
 # include <iomanip>
 # include <cmath>
+# include <cfloat>
 
 class Converter
 {
@@ -40,20 +41,27 @@ class Converter
 			public:
 				virtual const char* what() const throw();
 		};
-		class EmptyException : public std::exception{
+
+		class EmptyInputException : public std::exception{
 			public:
 				virtual const char* what() const throw();
 		};
+
 		class InvalidInputException : public std::exception{
 			public:
 				virtual const char* what() const throw();
 		};
+		void printChar(std::ostream &o) const;
+		void printInt(std::ostream &o) const;
+		void printFloat(std::ostream &o) const;
+		void printDouble(std::ostream &o) const;
 	private:
 		std::string _userInput;
 		int			_int;
 		char		_char;
 		float		_float;
 		double		_double;
+		bool		_error;
 		enum eType
 		{
 			CHAR,
@@ -63,7 +71,7 @@ class Converter
 			PSEUDO_LITERAL,
 		};
 		eType		_type;
-		bool internalParser();
+		void internalParser();
 		bool isPseudoLiteral() const;
 };
 
